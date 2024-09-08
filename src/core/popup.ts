@@ -6,7 +6,7 @@ import { initializeIcons, getPropertyTypeIcon } from '../icons/icons';
 import { unescapeValue } from '../utils/string-utils';
 import { decompressFromUTF16 } from 'lz-string';
 import { getLocalStorage, setLocalStorage } from '../utils/storage-utils';
-import { findMatchingTemplate } from '../utils/template-utils';
+import { findMatchingTemplate } from '../utils/url-pattern-match';
 
 let currentTemplate: Template | null = null;
 let templates: Template[] = [];

@@ -1,8 +1,3 @@
-import { extractPageContent, initializePageContent, replaceVariables } from './utils/content-extractor';
-import { findMatchingTemplate } from './utils/template-utils';
-import { generateFrontmatter, saveToObsidian } from './utils/obsidian-note-creator';
-import { decompressFromUTF16 } from 'lz-string';
-
 chrome.action.onClicked.addListener((tab) => {
 	if (tab.id) {
 		chrome.scripting.executeScript({
