@@ -1,6 +1,6 @@
-import { extractPageContent, initializePageContent, replaceVariables } from './utils/content-extractor.js';
-import { findMatchingTemplate } from './utils/template-utils.js';
-import { generateFrontmatter, saveToObsidian } from './utils/obsidian-note-creator.js';
+import { extractPageContent, initializePageContent, replaceVariables } from './utils/content-extractor';
+import { findMatchingTemplate } from './utils/template-utils';
+import { generateFrontmatter, saveToObsidian } from './utils/obsidian-note-creator';
 import { decompressFromUTF16 } from 'lz-string';
 
 chrome.action.onClicked.addListener((tab) => {
@@ -19,21 +19,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	}
 });
 
-chrome.commands.onCommand.addListener(async (command) => {
+chrome.commands.onCommand.addListener((command) => {
 	if (command === 'quick_clip') {
-		const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-		if (!tab.id || !tab.url) return;
-
-		// Open the popup
-		await chrome.action.openPopup();
-
-		// Wait for the popup to be ready
-		await new Promise(resolve => setTimeout(resolve, 500));
-
-		// Send a message to the popup to trigger quick clipping
-		chrome.runtime.sendMessage({action: "triggerQuickClip"}, response => {
-			if (chrome.runtime.lastError) {
-				console.error("Failed to send quick clip message:", chrome.runtime.lastError);
+		chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+			if (tabs[0].id) {
+				chrome.action.openPopup(() => {
+					// Wait for the popup to be ready
+					setTimeout(() => {
+						chrome.runtime.sendMessage({action: "triggerQuickClip"}, (response) => {
+							if (chrome.runtime.lastError) {
+								console.error("Failed to send quick clip message:", chrome.runtime.lastError);
+							} else {
+								console.log("Quick clip triggered successfully");
+							}
+						});
+					}, 500);
+				});
 			}
 		});
 	}

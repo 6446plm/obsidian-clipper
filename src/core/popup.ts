@@ -11,6 +11,36 @@ import { findMatchingTemplate } from '../utils/template-utils';
 let currentTemplate: Template | null = null;
 let templates: Template[] = [];
 
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+	if (request.action === "triggerQuickClip") {
+		document.body.classList.add('quick-clip');
+		handleClip().then(() => {
+			sendResponse({success: true});
+		}).catch((error) => {
+			console.error('Error in handleClip:', error);
+			sendResponse({success: false, error: error.message});
+		});
+		return true;
+	}
+});
+
+function showError(message: string) {
+	const errorMessage = document.querySelector('.error-message') as HTMLElement;
+	const clipper = document.querySelector('.clipper') as HTMLElement;
+
+	if (errorMessage && clipper) {
+		errorMessage.textContent = message;
+		errorMessage.style.display = 'block';
+		clipper.style.display = 'none';
+
+		// Ensure the settings icon is still visible when showing an error
+		const settingsIcon = document.getElementById('open-settings') as HTMLElement;
+		if (settingsIcon) {
+			settingsIcon.style.display = 'flex';
+		}
+	}
+}
+
 async function handleClip() {
 	if (!currentTemplate) return;
 
@@ -45,19 +75,16 @@ async function handleClip() {
 
 	try {
 		await saveToObsidian(fileContent, noteName, path, selectedVault, currentTemplate.behavior, currentTemplate.specificNoteName, currentTemplate.dailyNoteFormat);
-		window.close();
+		if (document.body.classList.contains('quick-clip')) {
+			// Don't close the window immediately, wait a bit to ensure the message is sent
+			setTimeout(() => window.close(), 100);
+		}
 	} catch (error) {
-		console.error('Error saving to Obsidian:', error);
+		console.error('Error in handleClip:', error);
 		showError('Failed to save to Obsidian. Please try again.');
+		throw error; // Re-throw the error so it can be caught by the caller
 	}
 }
-
-// Add this at the top of the file, outside of any function
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-	if (request.action === "triggerQuickClip") {
-		handleClip();
-	}
-});
 
 document.addEventListener('DOMContentLoaded', function() {
 	// Initialize icons immediately
@@ -332,22 +359,6 @@ document.addEventListener('DOMContentLoaded', function() {
 		chrome.runtime.openOptionsPage();
 	});
 
-	function showError(message: string) {
-		const errorMessage = document.querySelector('.error-message') as HTMLElement;
-		const clipper = document.querySelector('.clipper') as HTMLElement;
-
-		errorMessage.textContent = message;
-		errorMessage.style.display = 'block';
-		clipper.style.display = 'none';
-
-		// Ensure the settings icon is still visible when showing an error
-		const settingsIcon = document.getElementById('open-settings') as HTMLElement;
-		if (settingsIcon) {
-			settingsIcon.style.display = 'flex';
-		}
-	}
-});
-
 function escapeHtml(unsafe: string): string {
 	return unsafe
 		.replace(/&/g, "&amp;")
@@ -356,3 +367,5 @@ function escapeHtml(unsafe: string): string {
 		.replace(/"/g, "&quot;")
 		.replace(/'/g, "&#039;");
 }
+
+});
